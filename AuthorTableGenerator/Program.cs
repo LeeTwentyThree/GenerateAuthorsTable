@@ -1,7 +1,10 @@
 ﻿using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AuthorTableGenerator;
 
@@ -9,14 +12,13 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine("Please provide a working directory with a valid settings.json and get-contributors.bat file: ");
-        string? directory = Console.ReadLine();
-        if (directory is null || !Directory.Exists(directory))
-        {
-            Error("Invalid directory, ya fookin dingus!");
-            return;
-        }
-        string settingsFile = Path.Combine(directory, "settings.json");
+        Console.WriteLine("This program expects a valid table-generation-settings.json file in the same folder. Press enter to continue.");
+
+        Console.ReadLine();
+
+        string myFolder = Path.Combine(Assembly.GetExecutingAssembly().Location, "..");
+
+        string settingsFile = Path.Combine(myFolder, "table-generation-settings.json");
 
         if (!File.Exists(settingsFile))
         {
@@ -24,7 +26,7 @@ public static class Program
             return;
         }
 
-        AuthorTableSettings? settings = JsonSerializer.Deserialize<AuthorTableSettings>(File.ReadAllText(settingsFile));
+        Settings? settings = JsonSerializer.Deserialize<Settings>(File.ReadAllText(settingsFile));
 
         if (settings is null)
         {
@@ -37,52 +39,38 @@ public static class Program
             return;
         }
 
-        Console.WriteLine("\nThe following names will be excluded:");
-        if (settings.ExcludedNames != null && settings.ExcludedNames.Count > 0)
-        {
-            foreach (string name in settings.ExcludedNames)
-            {
-                Console.WriteLine(name);
-            }
-        }
-        else
-        {
-            Console.WriteLine("[NONE]");
-        }
+        string repositoryFolder = Path.Combine(myFolder, settings.PathToRepository);
 
-        if (settings.LocalRepositoryDirectory is null || !Directory.Exists(settings.LocalRepositoryDirectory))
+        if (repositoryFolder is null || !Directory.Exists(repositoryFolder))
         {
-            Error("Failed to load local repository directory! Just like when your mom failed to. uh. something.");
+            Error("Failed to load local repository directory! Just like when your mom failed to... uh... idk?");
             return;
         }
 
-        string gitResults = GetCommitInfoFromGit(settings.LocalRepositoryDirectory);
-
-        string[] gitResultsSplit = gitResults.Split('\n');
-
-        List<string> contributors = new List<string>();
-
-        for (int i = 2; i < gitResultsSplit.Length; i++)
-        {
-            int startIndex = 7;
-            if (startIndex > gitResultsSplit[i].Length) continue;
-            string contributorName = gitResultsSplit[i].Substring(startIndex);
-            if (settings.ExcludedNames.Contains(contributorName)) continue;
-            contributors.Add(contributorName);
-        }
+        var contributors = GetContributorInfoFromGithub(settings, repositoryFolder); 
 
         Console.WriteLine("\nThe following contributors were found:");
 
         foreach (var contributor in contributors)
         {
-            Console.WriteLine(contributor);
+            Console.WriteLine(contributor.Login);
         }
 
-        int rows = contributors.Count / settings.Columns;
-        bool remainderRow = contributors.Count % settings.Columns > 0;
+        int rows = contributors.Length / settings.Columns;
+        bool remainderRow = contributors.Length % settings.Columns > 0;
         if (remainderRow) rows++;
 
         StringBuilder sb = new StringBuilder();
+
+        if (settings.Title != null)
+        {
+            sb.AppendLine($"# {settings.Title}");
+        }
+
+        if (settings.Description != null)
+        {
+            sb.AppendLine($"{settings.Description}\n");
+        }
 
         for (int i = 0; i < settings.Columns; i++)
         {
@@ -101,35 +89,61 @@ public static class Program
         {
             for (int c = 0; c < settings.Columns; c++)
             {
-                sb.Append($"| { contributors[j] } | <img src=\"https://github.com/{ contributors[j] }.png\" width=\"50\"> ");
+                sb.Append($"| [{contributors[j].Login}]({contributors[j].HtmlUrl}) | <img src=\"https://github.com/{ contributors[j].AvatarURL }.png\" width=\"50\"> ");
                 j++;
-                if (j >= contributors.Count) break;
+                if (j >= contributors.Length)
+                {
+                    sb.AppendLine();
+                    break;
+                }
             }
             sb.AppendLine("|");
         }
 
-        File.WriteAllText(Path.Combine(Assembly.GetExecutingAssembly().Location, "../", "authors-table.md"), sb.ToString());
+        if (settings.Footer != null)
+        {
+            sb.AppendLine($"\n{settings.Footer}");
+        }
 
-        Console.WriteLine("\nSaved results to output authors-table.md output file.");
+        File.WriteAllText(Path.Combine(repositoryFolder, settings.FileName), sb.ToString());
+
+        Console.WriteLine($"\nSaved results to output {settings.FileName}.md output file in the repository root.");
 
         Console.ReadLine();
     }
 
-    private static string GetCommitInfoFromGit(string repoDir)
+    private static GithubContributor[] GetContributorInfoFromGithub(Settings settings, string repoDir)
     {
-        Process p = new Process();
-        p.StartInfo.UseShellExecute = false;
-        p.StartInfo.RedirectStandardOutput = true;
-        p.StartInfo.WorkingDirectory = repoDir;
-        p.StartInfo.FileName = Path.Combine(Assembly.GetExecutingAssembly().Location, "../", "get-contributors.bat");
-        p.Start();
-        string output = p.StandardOutput.ReadToEnd();
-        p.WaitForExit();
-        return output;
+        string urlAddress = $"https://api.github.com/repos/{settings.RepositoryOrganization}/{settings.RepositoryName}/contributors";
+        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urlAddress);
+        request.Headers.Add("User-Agent", "request");
+        HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+        string output = null;
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            Stream receiveStream = response.GetResponseStream();
+            StreamReader readStream = null;
+            if (response.CharacterSet == null)
+                readStream = new StreamReader(receiveStream);
+            else
+                readStream = new StreamReader(receiveStream, Encoding.GetEncoding(response.CharacterSet));
+            output = readStream.ReadToEnd();
+            response.Close();
+            readStream.Close();
+        }
+
+        if (output == null)
+        {
+            Error("Invalid API request data!");
+            return new GithubContributor[0];
+        }
+        GithubContributor[]? contributors = JsonSerializer.Deserialize<GithubContributor[]>(output);
+        return contributors;
     }
 
     private static void Error(string message)
     {
         Console.WriteLine("ERROR!!! Just shouldn't have been stupid, maybe you wouldn't have run into this error : " + message);
+        Console.ReadLine();
     }
 }
