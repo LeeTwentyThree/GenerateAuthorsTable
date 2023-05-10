@@ -75,6 +75,10 @@ public static class Program
         for (int i = 0; i < settings.Columns; i++)
         {
             sb.Append("| Name | Picture ");
+            if (settings.ListCommits)
+            {
+                sb.Append("| Commits ");
+            }
         }
         sb.AppendLine("|");
 
@@ -89,11 +93,15 @@ public static class Program
         {
             for (int c = 0; c < settings.Columns; c++)
             {
-                sb.Append($"| [{contributors[j].Login}]({contributors[j].HtmlUrl}) | <img src=\"https://github.com/{ contributors[j].AvatarURL }.png\" width=\"50\"> ");
+                sb.Append($"| [{contributors[j].Login}]({contributors[j].HtmlUrl}) | <img src=\"https://github.com/{contributors[j].AvatarURL}\" width=\"50\"> ");
+                if (settings.ListCommits)
+                {
+                    sb.Append($"| {contributors[j].Contributions} ");
+                }
                 j++;
                 if (j >= contributors.Length)
                 {
-                    sb.AppendLine();
+                    sb.AppendLine("|");
                     break;
                 }
             }

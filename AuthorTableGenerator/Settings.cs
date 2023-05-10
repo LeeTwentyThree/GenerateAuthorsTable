@@ -28,4 +28,7 @@ class Settings
 
     [JsonPropertyName("Footer")]
     public string? Footer { get; set; }
+
+    [JsonPropertyName("showCommits")]
+    public bool ListCommits { get; set; }
 }
