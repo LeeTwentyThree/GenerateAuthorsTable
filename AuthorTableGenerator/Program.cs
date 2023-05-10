@@ -13,7 +13,7 @@ public static class Program
         string? directory = Console.ReadLine();
         if (directory is null || !Directory.Exists(directory))
         {
-            Error("Invalid directory!");
+            Error("Invalid directory, ya fookin dingus!");
             return;
         }
         string settingsFile = Path.Combine(directory, "settings.json");
@@ -33,7 +33,7 @@ public static class Program
         }
         else if (settings.Columns == 0)
         {
-            Error("Attempting to create 0 columns; divide by zero error!");
+            Error("Attempting to create 0 columns; divide by zero error! Honestly, you should've known better, I'm disappointed.");
             return;
         }
 
@@ -52,7 +52,7 @@ public static class Program
 
         if (settings.LocalRepositoryDirectory is null || !Directory.Exists(settings.LocalRepositoryDirectory))
         {
-            Error("Failed to load local repository directory!");
+            Error("Failed to load local repository directory! Just like when your mom failed to. uh. something.");
             return;
         }
 
@@ -130,6 +130,6 @@ public static class Program
 
     private static void Error(string message)
     {
-        Console.WriteLine("ERROR : " + message);
+        Console.WriteLine("ERROR!!! Just shouldn't have been stupid, maybe you wouldn't have run into this error : " + message);
     }
 }
