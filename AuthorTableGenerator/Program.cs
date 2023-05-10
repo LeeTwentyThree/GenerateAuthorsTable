@@ -105,7 +105,6 @@ public static class Program
                 j++;
                 if (j >= contributors.Length)
                 {
-                    sb.AppendLine("|");
                     break;
                 }
             }
