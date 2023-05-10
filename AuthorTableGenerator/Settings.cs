@@ -26,7 +26,7 @@ class Settings
     [JsonPropertyName("description")]
     public string? Description { get; set; }
 
-    [JsonPropertyName("Footer")]
+    [JsonPropertyName("footer")]
     public string? Footer { get; set; }
 
     [JsonPropertyName("showCommits")]
