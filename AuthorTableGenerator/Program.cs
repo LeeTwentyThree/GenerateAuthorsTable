@@ -85,6 +85,10 @@ public static class Program
         for (int i = 0; i < settings.Columns; i++)
         {
             sb.Append("| ---- | --------------- ");
+            if (settings.ListCommits)
+            {
+                sb.Append("| ------ ");
+            }
         }
         sb.AppendLine("|");
 
