@@ -97,7 +97,7 @@ public static class Program
         {
             for (int c = 0; c < settings.Columns; c++)
             {
-                sb.Append($"| [{contributors[j].Login}]({contributors[j].HtmlUrl}) | <img src=\"https://github.com/{contributors[j].AvatarURL}\" width=\"50\"> ");
+                sb.Append($"| [{contributors[j].Login}]({contributors[j].HtmlUrl}) | <img src=\"{contributors[j].AvatarURL}\" width=\"50\"> ");
                 if (settings.ListCommits)
                 {
                     sb.Append($"| {contributors[j].Contributions} ");
