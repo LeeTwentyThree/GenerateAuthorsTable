@@ -123,7 +123,7 @@ public static class Program
 
         File.WriteAllText(Path.Combine(repositoryFolder, settings.FileName), sb.ToString());
 
-        Console.WriteLine($"\nSaved results to output {settings.FileName}.md output file in the repository root.");
+        Console.WriteLine($"\nSaved results to output {settings.FileName} output file in the repository root.");
 
         Console.ReadLine();
     }
