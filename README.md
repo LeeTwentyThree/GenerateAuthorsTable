@@ -1,5 +1,3 @@
-# GenerateAuthorsTable
-Generates a list of authors for a given repository.
 # Overview
 
 This program allows you to create a table
