@@ -59,6 +59,11 @@ public static class Program
         int rows = contributors.Length / settings.Columns;
         bool remainderRow = contributors.Length % settings.Columns > 0;
         if (remainderRow) rows++;
+        int columns = settings.Columns;
+        if (rows == 1)
+        {
+            columns = contributors.Length;
+        }
 
         StringBuilder sb = new StringBuilder();
 
@@ -72,7 +77,7 @@ public static class Program
             sb.AppendLine($"{settings.Description}\n");
         }
 
-        for (int i = 0; i < settings.Columns; i++)
+        for (int i = 0; i < columns; i++)
         {
             sb.Append("| Name | Picture ");
             if (settings.ListCommits)
@@ -82,7 +87,7 @@ public static class Program
         }
         sb.AppendLine("|");
 
-        for (int i = 0; i < settings.Columns; i++)
+        for (int i = 0; i < columns; i++)
         {
             sb.Append("| ---- | --------------- ");
             if (settings.ListCommits)
@@ -95,7 +100,7 @@ public static class Program
         int j = 0;
         for (int r = 0; r < rows; r++)
         {
-            for (int c = 0; c < settings.Columns; c++)
+            for (int c = 0; c < columns; c++)
             {
                 sb.Append($"| [{contributors[j].Login}]({contributors[j].HtmlUrl}) | <img src=\"{contributors[j].AvatarURL}\" width=\"50\"> ");
                 if (settings.ListCommits)
